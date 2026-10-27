@@ -5,6 +5,7 @@ from langchain_core.tools import tool
 from langchain_tavily import TavilySearch
 
 from database import save_memory, search_memory
+from rag import retrieve_from_rag
 
 load_dotenv()
 
@@ -44,6 +45,18 @@ def calculator(expression: str) -> str:
         return f"Calculation Error: {str(e)}"
 
 @tool
+def search_uploaded_documents(query: str) -> str:
+    """
+    Search uploaded documents for relevant information.
+    Use this when the user asks about uploaded PDFs, DOCX, TXT, notes, files or documents.
+    """
+
+    return retrieve_from_rag(
+        query = query,
+        thread_id = CURRENT_THREAD_ID
+    )
+
+@tool
 def remember_this(memory: str) -> str:
     """
     Save an important user preference or fact into long-term memory. Use this when the user asks you to remember something.
@@ -65,3 +78,10 @@ def recall_memory(query: str) -> str:
         query = query
     )
 
+tools = [
+    calculator,
+    search_uploaded_documents,
+    remember_this,
+    recall_memory,
+    web_search
+]
