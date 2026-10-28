@@ -1,38 +1,48 @@
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+import json
+import uuid
+from pathlib import Path
+
+import uvicorn
+from fastapi import FastAPI, Request, UploadFile, File, Form
+from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
+
+from langchain_core.messages import HumanMessage, AIMessage, AIMessageChunk, ToolMessage
+
 from agent import get_agent
-from langchain_core.messages import HumanMessage, SystemMessage
-from database import init_db
+from database import (
+    init_db,
+    save_chat_message,
+    get_chat_history,
+    create_or_update_conversation,
+    list_conversations,
+)
+
+from rag import add_document_to_rag
+from tools import set_current_thread_id
+
+app = FastAPI()
+
+# BASE_DIR = Path(__file__).resolve().parent
+# templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+templates = Jinja2Templates(directory="templates")
+
+Path("uploads").mkdir(exist_ok=True)
+Path("data").mkdir(exist_ok=True)
 
 init_db()
 
-agent = get_agent("gemini-2.5-flash")
 
-config = {"configurable": {"thread_id": "test_thread_id"}}
+@app.get("/")
+async def home(request: Request):
+    return templates.TemplateResponse(request=request, name="index.html", context={})
 
-for message_chunk, metadata in agent.stream(
-    {
-        "messages": [
-            HumanMessage(
-                content="My name is Nehal and I'm 27 years old, and I'm a Software Developer, Please remember that."
-            )
-        ]
-    },
-    config=config,
-    stream_mode="messages",
-):
-    content = message_chunk.content
-    text_to_print = ""
 
-    # Case A: Gemini structured block format
-    if isinstance(content, list):
-        for part in content:
-            if isinstance(part, dict) and part.get("type") == "text":
-                text_to_print += part.get("text", "")
-            elif isinstance(part, str):
-                text_to_print += part
-
-    # Case B: Standard string format
-    elif isinstance(content, str):
-        text_to_print = content
-
-    if text_to_print:
-        print(text_to_print, end="", flush=True)
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="0.0.0.0", port=8080, reload=True)
