@@ -30,8 +30,7 @@ ALLOWED_MODELS = {
     "gemini-3.1-pro",
     "gemini-2.5-pro",
     "gemini-2.5-flash-lite",
-    "nvidia-nemotron-3.5"
-    
+    "nvidia-nemotron-3.5",
 }
 
 SYSTEM_PROMPT = """
@@ -56,6 +55,7 @@ Rules:
 - Be clear, helpful, and concise.
 """
 
+
 def normalize_model_name(model_name: str | None) -> str:
     """
     Validate selected model from frontend.
@@ -72,6 +72,7 @@ def normalize_model_name(model_name: str | None) -> str:
 
     return model_name
 
+
 def build_agent(model_name: str):
     """Build one LangGraph agent for a selected Gemini model."""
 
@@ -79,21 +80,24 @@ def build_agent(model_name: str):
 
     # Initialize ChatGoogleGenerativeAI
     llm = ChatGoogleGenerativeAI(
-        model = selected_model,
-        temperature = 0.3,
-        streaming = True,
+        model=selected_model,
+        temperature=0.3,
+        streaming=True,
     )
 
     llm_with_tools = llm.bind_tools(tools)
 
     def chatbot_node(state: MessagesState):
-        messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"]
+        # messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"]
+
+        messages = state["messages"]
+
+        if not messages or not isinstance(messages[0], SystemMessage):
+            messages = [SystemMessage(content=SYSTEM_PROMPT)] + list(messages)
 
         response = llm_with_tools.invoke(messages)
 
-        return {
-            "messages": [response]
-        }
+        return {"messages": [response]}
 
     tool_node = ToolNode(tools)
 
@@ -106,16 +110,15 @@ def build_agent(model_name: str):
     workflow.add_conditional_edges("chatbot", tools_condition)
     workflow.add_edge("tools", "chatbot")
 
-    conn = sqlite3.connect(
-        "data/langgraph_checkpoints.sqlite",
-        check_same_thread = False
-    )
+    conn = sqlite3.connect("data/langgraph_checkpoints.sqlite", check_same_thread=False)
 
     checkpointer = SqliteSaver(conn)
 
     return workflow.compile(checkpointer=checkpointer)
-    
+
+
 _AGENT_CACHE = {}
+
 
 def get_agent(model_name: str | None = None):
     """

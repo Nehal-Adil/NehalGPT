@@ -10,7 +10,7 @@ load_dotenv()
 os.environ["SSL_CERT_FILE"] = certifi.where()
 os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
 
-import python_docx
+# import python_docx
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -82,8 +82,7 @@ def read_file_text(file_path: str) -> str:
 
 def add_document_to_rag(file_path: str, thread_id: str):
     """
-    Processes an uploaded file into chunks, tags them with conversation metadata,
-    embeds them, and persists them into ChromaDB under the given thread_id.
+    Processes an uploaded file into chunks, tags them with conversation metadata, embeds them, and persists them into ChromaDB under the given thread_id.
     """
     text = read_file_text(file_path)
 
