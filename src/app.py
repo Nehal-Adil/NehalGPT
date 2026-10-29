@@ -70,7 +70,7 @@ async def history(thread_id: str):
     }
 
 
-@app.get("/upload")
+@app.post("/upload")
 async def upload_document(file: UploadFile = File(...), thread_id: str = Form(...)):
     try:
         allowed_extensions = [".pdf", ".docx", ".txt", ".md", ".py", ".csv"]
